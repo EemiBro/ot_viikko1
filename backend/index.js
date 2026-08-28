@@ -1,5 +1,6 @@
 const express = require('express')
 const app = express()
+const mongoose = require('mongoose')
 
 app.use(express.json())
 app.use(express.static('dist'))
@@ -26,7 +27,9 @@ app.get('/', (request, response) => {
 })
 
 app.get('/api/notes', (request, response) => {
-  response.json(notes)
+  Note.find({}).then(notes => {
+    response.json(notes)
+  })
 })
 
 app.get('/api/notes/:id', (request, response) => {
@@ -78,3 +81,24 @@ const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
+
+
+if (process.argv.length < 3) {
+  console.log('give password as argument')
+  process.exit(1)
+}
+
+const password = process.argv[2]
+
+const url = `mongodb+srv://fullstack:${password}@cluster0.if8uldk.mongodb.net/noteApp?
+retryWrites=true&w=majority&appName=Cluster0`
+
+mongoose.set('strictQuery', false)
+mongoose.connect(url, { family: 4 })
+
+const noteSchema = new mongoose.Schema({
+  content: String,
+  important: Boolean,
+})
+
+const Note = mongoose.model('Note', noteSchema)
