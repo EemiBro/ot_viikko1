@@ -1,5 +1,7 @@
 const express = require('express')
 const app = express()
+require('dotenv').config()
+const Note = require('./models/note')
 const mongoose = require('mongoose')
 
 app.use(express.json())
@@ -33,14 +35,9 @@ app.get('/api/notes', (request, response) => {
 })
 
 app.get('/api/notes/:id', (request, response) => {
-  const id = request.params.id
-  const note = notes.find(note => note.id === id)
-  
-  if (note) {
+  Note.findById(request.params.id).then(note => {
     response.json(note)
-  } else {
-    response.status(404).end()
-  }
+  })
 })
 
 app.delete('/api/notes/:id', (request, response) => {
@@ -66,18 +63,17 @@ app.post('/api/notes', (request, response) => {
     })
   }
 
-  const note = {
+  const note = new Note({
     content: body.content,
     important: body.important || false,
-    id: generateId(),
-  }
+  })
 
-  notes = notes.concat(note)
-
-  response.json(note)
+  note.save().then(savedNote => {
+    response.json(savedNote)
+  })
 })
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
@@ -93,12 +89,3 @@ const password = process.argv[2]
 const url = `mongodb+srv://fullstack:${password}@cluster0.if8uldk.mongodb.net/noteApp?
 retryWrites=true&w=majority&appName=Cluster0`
 
-mongoose.set('strictQuery', false)
-mongoose.connect(url, { family: 4 })
-
-const noteSchema = new mongoose.Schema({
-  content: String,
-  important: Boolean,
-})
-
-const Note = mongoose.model('Note', noteSchema)
